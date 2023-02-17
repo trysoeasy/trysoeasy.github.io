@@ -60,9 +60,9 @@ const config: DocsThemeConfig = {
         />
         <meta
           name="og:title"
-          content={title ? title + ' – HUTAO' : 'HUTAO'}
+          content={title ? title + ' – LiuQiang' : 'LiuQiang'}
         />
-        <meta name="apple-mobile-web-app-title" content="HUTAO" />
+        <meta name="apple-mobile-web-app-title" content="LiuQiang" />
         <link rel="icon" href="/favicon.png" type="image/png" />
       </>
     )
@@ -93,7 +93,7 @@ const config: DocsThemeConfig = {
     toggleButton: true,
   },
   footer: {
-    text: `MIT 2023 © Hutao.`
+    text: `MIT 2023 © LiuQiang.`
   }
 }
 
