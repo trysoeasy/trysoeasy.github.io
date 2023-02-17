@@ -8,7 +8,7 @@
 	},
 	"scripts": {
 		"dev": "next dev",
-		"build": "next build",
-		"start": "next start && next export"
+		"build": "next build && next export",
+		"start": "next start"
 	}
 }
