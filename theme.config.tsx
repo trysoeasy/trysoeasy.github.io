@@ -6,7 +6,7 @@ import Image from 'next/image'
 const logo = (
   <span>
     <Image style={{ display: "inline-block", marginRight: 4, borderRadius: 24 }} src="/favicon.png" width={24} height={24} alt="" />
-    hutao
+    Lq
     <style jsx>{`
       span {
         padding: 0.5rem 0.5rem 0.5rem 0;
