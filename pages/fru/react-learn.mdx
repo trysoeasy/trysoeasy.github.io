@@ -1,0 +1,29 @@
+#### react 搭建项目
+
+1、[create-react-app](https://create-react-app.dev/docs/getting-started) 创建
+
+```
+npx create-react-app my-app
+cd my-app
+npm start
+```
+
+2、[vite](https://cn.vitejs.dev/guide/) 创建
+
+```
+# npm 6.x
+npm create vite@latest my-vite-app --template react
+
+# npm 7+, extra double-dash is needed:
+npm create vite@latest my-vite-app -- --template react
+
+# yarn
+yarn create vite my-vite-app --template react
+
+# pnpm
+pnpm create vite my-vite-app --template react
+pnpm install
+pnpm run dev
+
+// 查看 create-vite 以获取每个模板的更多细节：vanilla，vanilla-ts, vue, vue-ts，react，react-ts，react-swc，react-swc-ts，preact，preact-ts，lit，lit-ts，svelte，svelte-ts。
+```

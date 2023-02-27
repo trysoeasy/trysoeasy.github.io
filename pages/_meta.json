@@ -1,5 +1,9 @@
 {
     "index": "首页",
     "about": "关于我",
-    "arr": "数组"
+    "arr": "数组",
+    "fru": {
+        "title": "React",
+        "type": "page"
+    }
 }
