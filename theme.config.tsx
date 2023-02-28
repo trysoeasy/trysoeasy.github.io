@@ -62,6 +62,10 @@ const config: DocsThemeConfig = {
           name="og:title"
           content={title ? title + ' – LiuQiang' : 'LiuQiang'}
         />
+        <meta http-equiv="Expires" content="0" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Cache-control" content="no-cache" />
+        <meta http-equiv="Cache" content="no-cache"/>
         <meta name="apple-mobile-web-app-title" content="LiuQiang" />
         <link rel="icon" href="/favicon.png" type="image/png" />
       </>
