@@ -1,0 +1,116 @@
+### js 笔记
+
+##### 解构赋值
+
+1、数组的结构
+
+```
+const F4 = ['小沈阳','刘能','赵四','宋小宝'];
+let [xiao,liu,zhao,song] = F4;
+console.log(F4)
+```
+
+2、对象的结构
+
+```javascript
+const obj = {
+  s: "123",
+  ss: "323",
+};
+let { s, ss } = obj;
+console.log(s);
+console.log(ss);
+```
+
+##### 模板字符串
+
+```javascript
+// 声明
+let str = `<ul></ul>
+`; // 变量拼接
+let test = "sss";
+let con = `${test}测试`;
+console.log(con);
+```
+
+##### 简化对象写法
+
+```javascript
+let name = "lq";
+const per = {
+  name,
+};
+```
+
+##### 箭头函数
+
+```javascript
+// 声明函数
+let fn = function () {};
+// 箭头函数
+let fn2 = () => {};
+// this 是静态的，this 始终指向函数声明时所在作用域下的this的值
+// 不能作为构造实例化对象
+// 不能使用arguments变量
+//箭头函数的简写
+// 1、省略小括号，当形参有且只有一个的时候
+// 2、省略花括号，当代码体有且只有一个
+// 箭头函数适合于this无关的回调，定时器，数组方法的回调
+// 箭头函数不适合与this有关的回调，如事件回调，对象的方法
+```
+
+##### 参数默认值
+
+```javascript
+function add(a, b, c = 10) {
+  return a + b + c;
+}
+// 与解构赋值结合
+function conect({ username, password }) {
+  console.log(username);
+  console.log(password);
+}
+```
+
+##### rest 参数，用于获取函数的实参，用来代替 arguments
+
+```javascript
+function date(...args) {
+  console.log(args);
+}
+date("1", "2", "3"); // [1,2,3]
+// rest参数必须要放到参数最后
+```
+
+##### 扩展运算符
+
+```javascript
+const t4 = [1, 2, 3, 4];
+function add() {
+  console.log(argments);
+}
+add(...t4); //  === add(1,2,3,4)
+// 使用：数组的合并  const a = [...b,...c]
+// 数组的克隆
+// const sanzhihua = ['2']
+// const s = [...sanzhihua]
+```
+
+##### symbol 使用
+
+```javascript
+// 创建
+let s = Symbol();
+console.log(s, typeof s);
+let s2 = Symbol("233");
+// Symbol.for 创建
+let s4 = Symbol.for(1);
+let s5 = Symbol.for(1);
+console.log(s4 === s5);
+```
+
+向对象中添加方法
+
+```
+
+```

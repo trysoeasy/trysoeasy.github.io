@@ -1,0 +1,431 @@
+## webpack 使用
+
+#### 1、entry
+
+```
+entry:./src/index.js
+```
+
+#### 2、output
+
+publicPath : index.html 内部引用路径
+
+publicPath: '/'
+
+当前的域名 + publicPath + filename
+
+#### 3、loader 使用
+
+例如使用 css-loader：
+
+需要安装 npm i style-loader css-loader -D
+
+```javascript
+module: {
+  rules: [
+    {
+      test: /\.css$/, //一般就是正则表达式
+      use: ["style-loader", "css-loader"],
+      // use:[{loader:'css-loader',optiopns:{}} ]
+      // loader:'css-loader'
+    },
+  ];
+}
+```
+
+##### less-loader 使用
+
+需要安装 npm i less less-loader -D
+
+```javascript
+module: {
+  rules: [
+    {
+      test: /\.css$/, //一般就是正则表达式
+      use: ["style-loader", "css-loader", "less-loader"],
+    },
+  ];
+}
+```
+
+##### browserslistrc 使用配置
+
+新建.browserlistrc 文件
+
+```
+> 1%
+last 2 version
+not dead
+```
+
+也可以在 packeage.json 添加
+
+```
+"browserslist":[
+'> 1%'
+'last 2 version'
+'not dead'
+]
+```
+
+postcss-loader 使用（兼容 css）
+
+postcss：javascript 转换样式的工具
+
+安装：npm i postcss postcss-loader postcss-preset-env -D
+
+```javascript
+module:{
+	rules:[
+        {
+            test:/\.css$/, //一般就是正则表达式
+            use:['style-loader','css-loader','postcss-loader']
+            // postcss-preset-env  预设集合
+            // 在config直接配置写法
+            // use:['style-loader','css-loader',{
+            // loader:'postcss-loader',
+            // options:{
+            //	postcssOptions:{
+           	//	plugins:['postcss-preset-env']  // 引入插件
+        	//	}
+        	// }
+        }]
+        }
+	]
+}
+```
+
+独立配置 postcss.config.js,这样就不用在 webpack.config.js 配置使用了，可以达到复用的效果
+
+```javascript
+module.exports = {
+  plugins: [require("postcss-preset-env")],
+};
+```
+
+如果使用了 postcss-loader，需要配置 importLoaders
+
+```
+module:{
+	rules:[
+        {
+            test:/\.css$/, //一般就是正则表达式
+            use:['style-loader',{
+            	loader:'css-loader',
+            	options:{
+            		importLoader: 1, // 代表下面有一个loader
+            		esModule: false  // 不转为esModule 处理图片路径
+            	}
+            },'postcss-loader']
+        }]
+        }
+	]
+}
+```
+
+##### **file-loader 使用**
+
+将资源拷贝至指定的目录
+
+npm i file-loader -D
+
+```
+module:{
+	rules:[
+        {
+            test:/\.(png|svg|jpe?g)$/,
+            use:[{
+            	loader:'file-loader',
+            	options:{
+            		esModule: false  // 不转为esModule
+            		name:'[name].[hash:6].[ext]',
+            		outputPath:'img'  //输出目录
+            		//  name:'img/[name].[hash:6].[ext]',  // 目录加名称
+            	}
+            }]
+        }]
+        }
+	]
+}
+```
+
+文件输出名称：name [ext]:扩展名 [name]：文件原名 [hash:length]:文件内容
+
+##### url-loader 使用
+
+处理图片以 base64 的方式使用，减少请求次数
+
+npm i url-loader -D
+
+```javascript
+module:{
+	rules:[
+        {
+            test:/\.(png|svg|jpe?g)$/,
+            use:[{
+            	loader:'url-loader',
+            	options:{
+            		esModule: false  // 不转为esModule
+            		name:'img/[name].[hash:6].[ext]',
+            		limit:12*1024 // 不超过这个值采用base64
+            	}
+            }]
+        }]
+        }
+	]
+}
+```
+
+##### asset 使用 代替 file-loader url-loader
+
+asset/resource --> file-loader
+
+asset/inline --> url-loader
+
+asset/source --> raw-loader
+
+```javascript
+{
+    //使图片采用file-loader 和url-loader 模式
+    test:/\.(png|svg|jpe?g)$/,
+    type:'asset',
+    // 文件路径
+    generator: {
+    	filename: 'img/[name].[hash:4][ext]'
+    },
+    // base64配置
+    parser: {
+    	dataUrlCondition:{
+    		maxSize: 12*1024
+    	}
+    }
+},
+```
+
+##### asset 处理字体
+
+```javascript
+{
+    //打包字体
+    test:/\.(ttf|woff2?)$/,
+    type: "asset/resource",
+    generator: {
+    	filename: 'font/[name].[hash:3][ext]'
+    }
+}
+```
+
+##### babel-loader 使用 （处理 js 兼容性）
+
+npm i @babel/core @babel/preset-env -D
+
+npm i --save-dev core-js
+
+```
+{
+    test:/\.js$/,
+    use:[
+        {
+        	loader: "babel-loader",
+        	// 直接在config中使用
+        	//
+        	options:{
+        		presets:[
+        		['@babel/preset-env',{
+                    // false : 不对当前的js处理做 polyfill 的填充
+                    // usage: 依据当前用户源代码中所使用到的新语法进行填充
+                    // entry 根据当前浏览器决定填充
+                    useBuiltIns: 'usage',
+                    corejs: 3
+                }]
+        		]
+        	}
+        }
+    ],
+    exclude: /node_modules/  // 排除node-modules中js不采用babel
+}
+```
+
+使用**babel.config.js**,单独拎出去
+
+```javascript
+module.exports = {
+  presets: [
+    [
+      "@babel/preset-env",
+      {
+        // false : 不对当前的js处理做 polyfill 的填充
+        // usage: 依据当前用户源代码中所使用到的新语法进行填充
+        // entry 根据当前浏览器决定填充
+        useBuiltIns: "usage", // 默认是false
+        corejs: 3, // 使用corejs的版本
+      },
+    ],
+    ["@babel/preset-typescript"],
+  ],
+};
+```
+
+使用**polyfill** 需要安装:
+
+npm i core-js regenerator-runtime
+
+原有的包太大了@babel/polyfill
+
+```
+"core-js": "^3.22.5",
+"regenerator-runtime": "^0.13.9",
+```
+
+##### ts-loader 使用
+
+先全局安装 ts
+
+tsc --init 生产 tsconfig.json
+
+```
+{
+	test:/\.ts$/,
+	use: ['babel-loader','ts-loader']
+}
+```
+
+##### vue-loader 使用
+
+npm i vue-loader@14 -D
+
+```javascript
+{
+    test: /\.vue$/,
+    use: ['vue-loader']  // vue2使用vue-loader@14
+}
+// vue-loader@15
+// const VueLoaderPlugin = require('vue-loader/lib/plugin')
+// new VuwLoaderPlugin()
+// vue-loader@16 针对vue3
+```
+
+#### 4、plugins 插件使用
+
+每一个插件都是类
+
+```javascript
+plugins: [];
+```
+
+**CleanWebpackPlugin 使用**
+
+npm i clean-webpack-plugin -D
+
+```javascript
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+plugins: [new CleanWebpackPlugin()];
+```
+
+HtmlWebpackPlugin 使用
+
+npm i html-webpack-plugin -D
+
+```javascript
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+plugins: [
+  new HtmlWebpackPlugin({
+    title: " html-webpack-plugin",
+    template: "./src/index.html",
+  }),
+];
+```
+
+DefinePlugin 配置全局常量静态资源请求路径 html 中使用
+
+```
+const { DefinePlugin } = require('webpack')
+ new DefinePlugin({
+ 	BASE_URL:'"./"' // 需要以字符串格式
+ }),
+```
+
+**CopyWebpackPlugin 资源拷贝**
+
+npm i copy-webpack-plugin -D
+
+```javascript
+const CopyWebpackPlugin = require("copy-webpack-plugin");
+// 复制静态资源
+new CopyWebpackPlugin({
+  patterns: [
+    {
+      from: "public", //复制目录
+      globOptions: {
+        // 忽略文件
+        ignore: ["**/index.html"],
+      },
+    },
+  ],
+});
+```
+
+#### devServer
+
+npm i webpack-dev-server -D
+
+##### webpack-dev-server
+
+```javascript
+devServer: {
+    hot: true, // 热跟新
+    hotOnly:true, //其中如果有某一个元素更改报错，更改完成之后，只刷新当前更改
+    publicPath：'',
+    watchFiles: ['./src/index.html'], // 监听html改变
+    port: 4000, // 服务端口号
+    open:false, // 打开浏览器
+    compress：false, // 是否采用gzip压缩；
+},
+```
+
+-**publicPath**: 指定本地服务所在目录
+
+设置 publicPath 和 output 的 publicPath 需要设置一样的
+
+-**contentBase**: 我们打包之后需要使用其他资源，此时就告知去哪找
+
+```javascript
+contentBase：resolve(__dirname,'public')
+watchContentBase: true //监听引用的资源改变
+```
+
+**proxy**代理设置
+
+```javascript
+proxy:{
+	'/api': {
+		target:'hthps://api.github.com',
+		pathRewrite:{
+			"^/api":''
+		}
+		changeOrign: true
+	}
+}
+```
+
+#### resolve 设置
+
+```
+resolve:{
+	extensions:['.js','.json','.ts','.vue'],
+	alias:{
+		'@': path.resolve(__dirname,'src')
+	}
+}
+```
+
+source-map 设置:映射找出错误信息源文件的代码
+
+```javascript
+devtool:'source-map' // 默认值使eval
+值有：eval-source-map hidden-source-map  nosources-source-map inline-source-map cheap-source-map cheap-module-source-map(个人搭建建议使用)
+```
+
+#### 总结：
+
+需要新建 config 目录

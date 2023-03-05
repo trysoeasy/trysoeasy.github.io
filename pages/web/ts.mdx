@@ -1,0 +1,24 @@
+1、安装node
+2、npm install -g typescript
+
+```typescript
+// 初始化config.js
+tsc --init 
+```
+
+##### 修改tsc编译生成文件的输出目录和ts文件所在[根目录](https://so.csdn.net/so/search?q=根目录&spm=1001.2101.3001.7020)的地址
+
+```typescript
+{
+    "outDir": "./dist",                     
+    "rootDir": "./src",                     
+}
+```
+
+##### 用watch来动态检测ts文件的改变并自动编译
+
+```typescript
+tsc -w
+```
+
+3、tsc hello.ts  // 编译执行转换成js文件
