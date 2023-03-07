@@ -1,0 +1,220 @@
+# axios 配置
+
+使用到的包如下：
+
+- axios（请求主库）
+- axios-retry（axios 附赠的重试库）
+- qs（用来处理一些参数等，不用也可以，可以直接使用 JSON.stringfy()）
+- crypto-js（用来加密等）
+
+前提：
+新建一个`request.ts`文件来写封装的方法
+新建一个`config.ts`来放 Axios 的配置参数
+
+config.ts
+
+```
+// axios配置
+export const axiosConfig: AxiosConfig = {
+    baseURL_dev: 'http://127.0.0.1:9675',	// 测试环境地址
+    baseURL_prod: '',		// 正式环境地址
+    timeout: 3000,	// 超时时间（可以根据不同的环境配置响应时间）
+    withCredentials: true, // 是否允许携带cookie
+    retries: 0,	// 请求失败重试次数`
+    shouldResetTimeout: true,	// 重试的时候是否重置超时时间
+    retryDelay: 0,	// 每个请求之间的重试延迟时间(ms)`
+}
+interface AxiosConfig {
+    baseURL_dev: string
+    baseURL_prod: string
+    timeout: number
+    withCredentials: boolean
+    retries: number
+    shouldResetTimeout: boolean
+    retryDelay: any,
+}
+
+```
+
+request.ts
+
+```
+// request.ts
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
+import { axiosConfig } from './config'
+import { message } from 'antd'
+import axiosRetry from 'axios-retry'
+import { MD5 } from 'crypto-js'
+import qs from 'qs'
+
+// 判断是否是正式环境
+const isProd = () => import.meta.env.VITE_APP_ENV === 'production'
+
+const {
+    baseURL_dev,
+    baseURL_prod,
+    timeout,
+    withCredentials,
+    retries,
+    shouldResetTimeout,
+    retryDelay,
+} = axiosConfig
+
+
+// 声明CancelToken
+const CancelToken = axios.CancelToken
+
+// 请求列表（数据格式：{ key: function(){} }）
+const pendingReqKeys = new Map()
+
+export enum AxiosCancelReq {
+    BEFORE = 'before',
+    AFTER = 'after',
+}
+
+// 获取请求的Key，用来保存或移除请求
+const getReqKey = (config: AxiosRequestConfig) => {
+    // 请求方式、请求地址、请求参数生成的字符串来作为是否重复请求的依据(通过MD5加密一下，要不然Key太长了)
+    const { method, url, params, data } = config
+    // 不用qs的话，用JSON.stringfy()也可
+    return MD5(
+        [method, url, qs.stringify(params), qs.stringify(data)].join('&')
+    ).toString()
+}
+
+// 请求拦截调用
+const reqIntercept = (config: AxiosRequestConfig) => {
+    if (!config) {
+        return
+    }
+    // 生成请求Key
+    const key = getReqKey(config)
+    // 如果包含取消请求的配置，则执行下面判断并取消对应的请求
+    if (config.cancelRepeat) {
+        // 取消之前的请求
+        if (config.cancelRepeat === AxiosCancelReq.BEFORE) {
+            // Map里面有请求则取消之前的请求
+            if (pendingReqKeys.has(key)) {
+                // 取消请求 & 移除key
+                pendingReqKeys.get(key)()
+                pendingReqKeys.delete(key)
+            }
+            // 把最新的请求设置进去(cancel是个方法，想取消请求的话，直接调用即可)
+            config.cancelToken = new CancelToken((cancel) => {
+                pendingReqKeys.set(key, cancel)
+            })
+        }
+        // 取消之后的请求
+        if (config.cancelRepeat === AxiosCancelReq.AFTER) {
+            // 如果请求里面有该请求，则直接取消该次请求(保留上次请求)
+            if (pendingReqKeys.has(key)) {
+                return (config.cancelToken = new CancelToken((cancel) => cancel()))
+            }
+            pendingReqKeys.set(key, null)
+        }
+    }
+}
+
+// 响应拦截调用（直接获取Key，移除请求即可）
+const rspIntercept = (config: AxiosRequestConfig) => {
+    if (!config) {
+        return
+    }
+    const key = getReqKey(config)
+    const fn = pendingReqKeys.get(key)
+    fn && fn()
+    pendingReqKeys.delete(key)
+}
+
+
+// 创建axios实例
+const axiosService = axios.create({
+    baseURL: isProd() ? baseURL_prod : baseURL_dev,
+    timeout,
+    withCredentials,
+})
+
+// 重试操作
+axiosRetry(axiosService, {
+    retries,
+    shouldResetTimeout,
+    retryDelay: (retryCount) => retryCount * retryDelay,
+    retryCondition: (error) => {
+        // 包含超时，则返回错误
+        return error.message.includes('timeout')
+    },
+})
+
+// 配置通用请求头
+const headers = {
+    // getLocalLang()是获取项目语言的方法，想把语言给到服务端，然后服务端可以根据不同的语种返回数据
+    // language: getLocalLang(),
+    'Content-Type': 'application/json',
+    // 主要用来处理项目的鉴权，假如我们使用了第三方存储库，例如pinia，redux等，如果想直接在此处获取配置，是有问题的，所以可以动态配置在请求拦截use中，在调用的时候再执行
+    // Authorization: getToken(),
+}
+
+// 请求拦截
+axiosService.interceptors.request.use(
+    (config: AxiosRequestConfig) => {
+        config.headers = {
+            // 自己配置的通用的headers
+            ...headers,
+            // 默认的headers（接口处传递的herders）,传递的默认要覆盖默认的，所以放后面
+            ...config.headers,
+        }
+
+        // config.cancelRepeat
+        // 字段用来判断是否需要取消重复请求，
+        // - before取消之前的请求
+        // - after取消之后的请求
+        // - 没配置字段或者为undefined则不取消重复请求
+        reqIntercept(config)
+
+        return config
+    },
+    // 错误处理
+    (error) => errorHandler(error)
+)
+
+// 响应拦截
+axiosService.interceptors.response.use(
+    (response: AxiosResponse) => {
+        const { config, data } = response
+
+        rspIntercept(config)
+
+        // 错误处理（我们的所有接口都会默认返回一个success用来判断成功还是失败）
+        if (data && !data.success) {
+            return errorHandler(data)
+        }
+
+        // do something.....
+
+        return data
+    },
+    // 错误处理
+    (error) => {
+        const { response, config } = error
+        // 响应错误处理
+        rspIntercept(config)
+        if (response) {
+            return errorHandler(error)
+        }
+        // 如果是取消请求操作，则不返回错误信息
+        if (axios.isCancel(error)) {
+            return
+        }
+        return errorHandler(error)
+    }
+)
+
+// 错误处理
+const errorHandler = (error: any) => {
+    message.error('请求异常，请稍后重试！')
+    return Promise.reject(error)
+}
+
+// 默认导出
+export default axiosService
+```
